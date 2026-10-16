@@ -1,0 +1,15 @@
+[Unit]
+Description=agent-room AutoGen Studio 127.0.0.1:8081
+After=agent-room-claude.service agent-room-gemini.service agent-room-nvidia.service agent-room-jev.service
+
+[Service]
+WorkingDirectory=/home/dmlserver/agent-room
+EnvironmentFile=/home/dmlserver/agent-room/.env
+UnsetEnvironment=ANTHROPIC_API_KEY
+Environment=PATH=/home/dmlserver/agent-room/.venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/dmlserver/agent-room/.venv/bin/autogenstudio ui --host 127.0.0.1 --port 8081 --appdir /home/dmlserver/agent-room/studio
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

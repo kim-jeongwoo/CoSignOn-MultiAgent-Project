@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>agent-room 대화방</title>
+<style>
+:root {
+  --bg: #b2c7d9; --panel: #f7f8fa; --fg: #1d1f23; --muted: #5f6b7a; --line: #d8dde3;
+  --me: #fee500; --me-fg: #1d1f23; --ai: #ffffff; --ai-fg: #1d1f23; --sys: rgba(0,0,0,.18); --sys-fg: #fff;
+  --claude: #d97757; --gemini: #4285f4; --deepseek: #6c5ce7; --human: #2fb344; --accent: #2563eb; --err: #c0392b;
+  --bar: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1e2733; --panel: #1a1d22; --fg: #e8eaed; --muted: #9aa0a6; --line: #333a44;
+    --me: #e6cf00; --me-fg: #1d1f23; --ai: #2c323b; --ai-fg: #e8eaed; --sys: rgba(255,255,255,.12); --sys-fg: #d0d4da;
+    --accent: #5b8def; --err: #ff7b6b; --bar: #23272e; }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; color: var(--fg); background: var(--panel); }
+.app { display: grid; grid-template-columns: 1fr 260px; height: 100vh; height: 100dvh; }
+.main { display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--bar); border-bottom: 1px solid var(--line); }
+header h1 { font-size: 16px; margin: 0 6px 0 0; }
+header select { font: inherit; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+header .grow { flex: 1; }
+header button { padding: 4px 10px; font-size: 13px; }
+header a { color: var(--accent); text-decoration: none; font-size: 13px; }
+#log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 8px; align-items: flex-start; max-width: 100%; }
+.row.me { flex-direction: row-reverse; }
+.avatar { flex: 0 0 38px; height: 38px; border-radius: 14px; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.who { font-size: 12px; color: var(--fg); opacity: .8; margin: 0 0 3px 2px; }
+.stack { display: flex; flex-direction: column; max-width: min(70%, 640px); min-width: 0; }
+.row.me .stack { align-items: flex-end; }
+.bubble { background: var(--ai); color: var(--ai-fg); padding: 8px 12px; border-radius: 4px 14px 14px 14px; white-space: pre-wrap; word-break: break-word; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
+.row.me .bubble { background: var(--me); color: var(--me-fg); border-radius: 14px 4px 14px 14px; }
+.tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 9px; background: rgba(0,0,0,.07); margin: 0 4px 4px 0; }
+.tag.agree { background: #d6f5dd; color: #19692c; } .tag.oppose { background: #fde0dc; color: #a2281a; } .tag.add { background: #e3ecfd; color: #1f4fae; }
+.done { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700; color: #19692c; }
+.time { font-size: 11px; color: var(--fg); opacity: .55; align-self: flex-end; margin: 0 2px; white-space: nowrap; }
+.sys { align-self: center; background: var(--sys); color: var(--sys-fg); font-size: 12px; padding: 3px 12px; border-radius: 12px; text-align: center; max-width: 90%; }
+.sys.err { background: var(--err); color: #fff; }
+.typing { align-self: flex-start; font-size: 12px; color: var(--fg); opacity: .7; padding-left: 4px; }
+form.bar { display: flex; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--bar); border-top: 1px solid var(--line); }
+textarea { flex: 1; resize: none; font: inherit; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); min-height: 42px; max-height: 140px; }
+textarea:disabled { opacity: .6; }
+textarea.myturn { outline: 2px solid var(--human); border-color: transparent; }
+button { font: inherit; border: 0; border-radius: 10px; padding: 0 16px; cursor: pointer; background: var(--me); color: #1d1f23; font-weight: 600; }
+button.stop { background: transparent; border: 1px solid var(--line); color: var(--fg); }
+button:disabled { opacity: .5; cursor: default; }
+aside { border-left: 1px solid var(--line); padding: 14px; overflow-y: auto; font-size: 13px; background: var(--panel); }
+aside h2 { font-size: 13px; margin: 0 0 6px; }
+aside section + section { margin-top: 18px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--human); margin-right: 6px; }
+.u { padding: 2px 0; } .l { padding: 2px 0; color: var(--muted); } .l b { color: var(--fg); font-weight: 600; }
+.help { color: var(--muted); font-size: 12px; line-height: 1.6; }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  aside { border-left: 0; border-top: 1px solid var(--line); max-height: 30vh; }
+  .stack { max-width: 82%; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="main">
+    <header>
+      <h1>agent-room</h1>
+      <select id="team" aria-label="팀 선택"></select>
+      <button type="button" class="stop" id="newchat" title="이전 대화를 비우고 새로 시작">새 대화</button>
+      <span class="grow"></span>
+      <a href="/" title="AutoGen Studio 원래 화면(팀 편집)">Studio 화면</a>
+      <a href="/__room/logout">나가기</a>
+    </header>
+    <div id="log" aria-live="polite"></div>
+    <form class="bar" id="bar">
+      <textarea id="input" rows="1" placeholder="질문을 입력하세요 (Enter 보내기, Shift+Enter 줄바꿈)"></textarea>
+      <button type="button" class="stop" id="stop" hidden>멈추기</button>
+      <button type="submit" id="send">보내기</button>
+    </form>
+  </div>
+  <aside>
+    <section><h2><span class="dot"></span>접속 중 <span id="ucount">0</span>명</h2><div id="users"></div></section>
+    <section><h2>접속 기록</h2><div id="access"></div></section>
+    <section><h2>참여자</h2>
+      <div class="help">
+        <div><b style="color:var(--claude)">클로드</b> 제안 담당 (Claude Sonnet)</div>
+        <div><b style="color:var(--gemini)">제미나이</b> 검토 담당 (Gemini CLI)</div>
+        <div><b style="color:var(--deepseek)">딥시크</b> 정리 담당 (DeepSeek, NVIDIA)</div>
+        <div><b style="color:var(--human)">사람</b> 나 — 차례가 오면 입력칸이 초록색으로 열립니다</div>
+      </div>
+    </section>
+  </aside>
+</div>
+<script>
+(function () {
+  var USER = 'guestuser@gmail.com';
+  var AI = {
+    claude: {ko: '클로드', color: 'var(--claude)', ch: '클'},
+    gemini: {ko: '제미나이', color: 'var(--gemini)', ch: '제'},
+    deepseek: {ko: '딥시크', color: 'var(--deepseek)', ch: '딥'}
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var logEl = $('log'), input = $('input'), sendBtn = $('send'), stopBtn = $('stop'), teamSel = $('team');
+  var me = '', teams = [], ws = null, state = 'idle', typingEl = null;
+  // 이어가기: 같은 대화방의 이전 발언을 다음 질문에 붙여 보낸다(Studio는 질문마다 팀을 새로 만들어서 스스로는 기억하지 못함).
+  var history = [], sessionId = null, sessionTeam = null, skipUserEcho = false;
+  var HIST_MAX_ITEMS = 24, HIST_MAX_CHARS = 12000;
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]; }); }
+  function now() { var d = new Date(); return (d.getHours() < 12 ? '오전 ' : '오후 ') + ((d.getHours() + 11) % 12 + 1) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function scroll() { logEl.scrollTop = logEl.scrollHeight; }
+  function sys(text, err) { var el = document.createElement('div'); el.className = 'sys' + (err ? ' err' : ''); el.textContent = text; logEl.appendChild(el); scroll(); }
+  function typing(text) {
+    if (typingEl) { typingEl.remove(); typingEl = null; }
+    if (text) { typingEl = document.createElement('div'); typingEl.className = 'typing'; typingEl.textContent = text; logEl.appendChild(typingEl); scroll(); }
+  }
+
+  function body(content) {
+    var text = typeof content === 'string' ? content : JSON.stringify(content);
+    var html = '', lines = text.split('\n');
+    var m = lines[0].match(/^\s*\[받는 사람:\s*([^\]]+)\]\s*\[([^\]]+)\]\s*$/);
+    if (m) {
+      var kind = m[2].trim(), cls = kind === '동의' ? 'agree' : kind === '반대' ? 'oppose' : 'add';
+      html += '<span class="tag">→ ' + esc(m[1].trim()) + '</span><span class="tag ' + cls + '">' + esc(kind) + '</span><br>';
+      lines.shift();
+    }
+    var done = false;
+    if (lines.length && lines[lines.length - 1].trim() === '합의완료') { lines.pop(); done = true; }
+    html += esc(lines.join('\n').trim());
+    if (done) html += '<br><span class="done">✓ 합의완료</span>';
+    return html;
+  }
+
+  function bubble(source, content) {
+    typing('');
+    var mine = source === 'user' || source === 'human';
+    var row = document.createElement('div');
+    row.className = 'row' + (mine ? ' me' : '');
+    var a = AI[source] || {ko: source, color: 'var(--muted)', ch: source.slice(0, 1)};
+    var html = '';
+    if (!mine) html += '<div class="avatar" style="background:' + a.color + '">' + esc(a.ch) + '</div>';
+    html += '<div class="stack">' + (mine ? '' : '<div class="who">' + esc(a.ko) + '</div>') +
+      '<div class="bubble">' + body(content) + '</div></div><div class="time">' + now() + '</div>';
+    row.innerHTML = html;
+    logEl.appendChild(row);
+    scroll();
+  }
+
+  function setState(s) {
+    state = s;
+    input.classList.toggle('myturn', s === 'myturn');
+    input.disabled = s === 'running';
+    sendBtn.disabled = s === 'running';
+    stopBtn.hidden = !(s === 'running' || s === 'myturn');
+    teamSel.disabled = s !== 'idle';
+    $('newchat').disabled = s !== 'idle';
+    input.placeholder = s === 'myturn' ? '내 차례입니다. 의견을 입력하세요 (Enter 보내기)' :
+      s === 'running' ? 'AI들이 이야기하는 중…' : '질문을 입력하세요 (Enter 보내기, Shift+Enter 줄바꿈)';
+    if (s === 'myturn') input.focus();
+  }
+
+  function api(path, opts) {
+    return fetch(path, Object.assign({credentials: 'same-origin', headers: {'Content-Type': 'application/json'}}, opts || {}))
+      .then(function (r) {
+        if (r.redirected && r.url.indexOf('/__room/login') >= 0) { location.href = '/__room/login?next=/room'; throw new Error('로그인 필요'); }
+        return r.json();
+      });
+  }
+
+  function loadTeams() {
+    return api('/api/teams/?user_id=' + encodeURIComponent(USER)).then(function (d) {
+      teams = (d.data || []).sort(function (a, b) { return a.id - b.id; });
+      teamSel.innerHTML = teams.map(function (t) { return '<option value="' + t.id + '">' + esc(t.component.label || ('팀 ' + t.id)) + '</option>'; }).join('');
+    });
+  }
+
+  function whoName(src) { return src === 'user' || src === 'human' ? '사람(' + me + ')' : (AI[src] ? AI[src].ko : src); }
+  function remember(src, text) {
+    // '합의완료' 글자가 기록에 남으면 다음 질문 자체가 종료 조건에 걸려 바로 끝나므로 바꿔 둔다.
+    history.push({who: whoName(src), text: (typeof text === 'string' ? text : JSON.stringify(text)).replace(/합의완료/g, '(합의함)')});
+    while (history.length > HIST_MAX_ITEMS) history.shift();
+    while (history.length > 1 && history.reduce(function (n, h) { return n + h.text.length; }, 0) > HIST_MAX_CHARS) history.shift();
+  }
+  function composeTask(question) {
+    if (!history.length) return question;
+    return '[이전 대화 — 아래 기록을 이어서 논의한다]\n' +
+      history.map(function (h) { return h.who + ': ' + h.text; }).join('\n\n') +
+      '\n\n[사람(' + me + ')의 새 메시지]\n' + question;
+  }
+
+  function start(question) {
+    var team = teams.filter(function (t) { return String(t.id) === teamSel.value; })[0];
+    if (!team) { sys('팀을 불러오지 못했습니다', true); return; }
+    var task = composeTask(question);
+    setState('running');
+    bubble('user', question);
+    skipUserEcho = true;
+    var follow = history.length > 0;
+    remember('user', question);
+    var sess = (sessionId && sessionTeam === team.id) ? Promise.resolve(sessionId) :
+      api('/api/sessions/', {method: 'POST', body: JSON.stringify({user_id: USER, team_id: team.id, name: me + ': ' + question.slice(0, 40)})})
+        .then(function (s) { sessionId = s.data.id; sessionTeam = team.id; return sessionId; });
+    if (!follow) sys((team.component.label || '팀') + ' · 새 대화 시작');
+    else sys('이전 대화 ' + (history.length - 1) + '개 발언을 이어서 보냅니다');
+    sess.then(function (sid) { return api('/api/runs/', {method: 'POST', body: JSON.stringify({session_id: sid, user_id: USER})}); })
+      .then(function (r) {
+        ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/api/ws/runs/' + r.data.run_id);
+        ws.onopen = function () { ws.send(JSON.stringify({type: 'start', task: task, team_config: team.component})); typing('AI들이 생각하는 중…'); };
+        ws.onmessage = function (ev) { onMsg(JSON.parse(ev.data)); };
+        ws.onclose = function () { if (state !== 'idle') { typing(''); sys('연결이 끊겼습니다'); setState('idle'); } };
+      })
+      .catch(function (e) { sys('시작하지 못했습니다: ' + e.message, true); setState('idle'); });
+  }
+
+  function onMsg(m) {
+    if (m.type === 'message' && m.data && m.data.source && (m.data.type === 'TextMessage' || m.data.type === 'StopMessage' || !m.data.type)) {
+      if (m.data.source === 'user' && skipUserEcho) { skipUserEcho = false; return; }
+      bubble(m.data.source, m.data.content);
+      remember(m.data.source, m.data.content);
+      if (state === 'myturn') setState('running');
+      if (state === 'running') typing('다음 발언을 기다리는 중…');
+    } else if (m.type === 'input_request') {
+      typing(''); sys('내 차례입니다 — 의견을 입력해 주세요'); setState('myturn');
+    } else if (m.type === 'result' || m.type === 'completion') {
+      typing('');
+      var reason = (m.data && m.data.task_result && m.data.task_result.stop_reason) || (m.data && m.data.stop_reason) || '';
+      var text = m.status === 'cancelled' ? '멈췄습니다' : m.status === 'error' ? '에러로 끝났습니다' :
+        /합의완료/.test(reason) ? '합의완료로 끝났습니다' : /Maximum|max/i.test(reason) ? '최대 발언 수(16)에 닿아 끝났습니다' : '대화가 끝났습니다';
+      var em = String(m.error || '');
+      if (m.status === 'error') text = /제미나이 무료 한도/.test(em) ? em.match(/제미나이 무료 한도[^'"\\]*/)[0] :
+        /quota|429/i.test(em) ? '제미나이 무료 한도에 걸렸습니다' : '에러로 끝났습니다: ' + em.slice(0, 160);
+      sys(text + (m.status !== 'error' ? ' — 이어서 질문하면 앞 대화를 기억합니다' : ''), m.status === 'error');
+      setState('idle');
+      if (ws) { var w = ws; ws = null; try { w.close(); } catch (e) {} }
+    } else if (m.type === 'error') {
+      typing(''); sys('에러: ' + (m.error || ''), true); setState('idle');
+    }
+  }
+
+  $('bar').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    if (state === 'myturn' && ws) { ws.send(JSON.stringify({type: 'input_response', response: text})); setState('running'); typing('다음 발언을 기다리는 중…'); }
+    else if (state === 'idle') start(text);
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('bar').requestSubmit(); }
+  });
+  $('newchat').addEventListener('click', function () {
+    if (state !== 'idle') return;
+    history = []; sessionId = null; sessionTeam = null;
+    logEl.innerHTML = ''; sys('새 대화입니다. 질문을 보내 주세요'); input.focus();
+  });
+  stopBtn.addEventListener('click', function () { if (ws) ws.send(JSON.stringify({type: 'stop', reason: me + ' 님이 멈춤'})); });
+
+  function hm(t) { return t.slice(5, 16).replace('T', ' '); }
+  function presence() {
+    api('/__room/presence').then(function (d) {
+      me = d.me || me;
+      $('ucount').textContent = d.users.length;
+      $('users').innerHTML = d.users.map(function (u) { return '<div class="u">' + esc(u) + (u === d.me ? ' (나)' : '') + '</div>'; }).join('') || '-';
+      $('access').innerHTML = (d.log || []).map(function (e) { return '<div class="l">' + hm(e.t) + ' <b>' + esc(e.name) + '</b> ' + esc(e.event) + '</div>'; }).join('') || '-';
+    }).catch(function () {});
+  }
+  presence(); setInterval(presence, 10000);
+  loadTeams().then(function () { sys('팀을 고르고 질문을 보내면 AI 셋이 이야기를 시작합니다'); setState('idle'); })
+    .catch(function () { sys('팀 목록을 불러오지 못했습니다', true); });
+})();
+</script>
+</body>
+</html>

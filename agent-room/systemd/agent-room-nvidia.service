@@ -1,0 +1,12 @@
+[Unit]
+Description=agent-room NVIDIA API 중계 127.0.0.1:8093 (DeepSeek, 키는 이 서비스 환경에만)
+
+[Service]
+WorkingDirectory=/home/dmlserver/agent-room
+EnvironmentFile=/home/dmlserver/agent-room/.env
+ExecStart=/home/dmlserver/agent-room/.venv/bin/uvicorn nvidia_relay:app --host 127.0.0.1 --port 8093
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

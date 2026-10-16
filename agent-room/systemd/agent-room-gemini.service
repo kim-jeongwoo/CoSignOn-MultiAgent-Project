@@ -1,0 +1,13 @@
+[Unit]
+Description=agent-room Gemini 중계 127.0.0.1:8092 (공식 Gemini CLI 비대화형, 구글 계정 로그인 한도)
+
+[Service]
+WorkingDirectory=/home/dmlserver/agent-room
+UnsetEnvironment=GEMINI_API_KEY GOOGLE_API_KEY
+Environment=PATH=/home/dmlserver/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/dmlserver/agent-room/.venv/bin/uvicorn gemini_cli_relay:app --host 127.0.0.1 --port 8092
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

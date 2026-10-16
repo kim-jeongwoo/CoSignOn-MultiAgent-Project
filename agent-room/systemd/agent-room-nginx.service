@@ -1,0 +1,14 @@
+[Unit]
+Description=agent-room 비밀번호 관문 nginx 127.0.0.1:8082 → Studio 8081 (basic auth)
+After=agent-room-studio.service
+
+[Service]
+Type=forking
+PIDFile=/home/dmlserver/agent-room/nginx/nginx.pid
+ExecStart=/usr/sbin/nginx -c /home/dmlserver/agent-room/nginx/nginx.conf -p /home/dmlserver/agent-room/nginx
+ExecReload=/usr/sbin/nginx -c /home/dmlserver/agent-room/nginx/nginx.conf -p /home/dmlserver/agent-room/nginx -s reload
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

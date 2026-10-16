@@ -1,0 +1,12 @@
+[Unit]
+Description=agent-room Jev 발언자 선택 중계 127.0.0.1:8094 (TypeSafe Jev, 코싸인온 3달러 장부 공유)
+
+[Service]
+WorkingDirectory=/home/dmlserver/agent-room
+EnvironmentFile=/home/dmlserver/agent-room/.env
+ExecStart=/home/dmlserver/agent-room/.venv/bin/uvicorn jev_selector:app --host 127.0.0.1 --port 8094
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

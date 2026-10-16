@@ -1,0 +1,35 @@
+# 비밀값 — 키·토큰·비밀번호가 든 파일은 올리지 않는다
+.env
+.env.*
+.auth_password
+.gate_secret
+*.pem
+*credentials*.json
+
+# Gemini CLI 설정·인증 (~/.gemini, 중계 작업 폴더)
+.gemini/
+gemini_cwd/
+claude_cwd/
+
+# 실행 기록·접속 기록
+logs/
+*.log
+access_log.jsonl
+nginx/logs/
+nginx/tmp/
+*.pid
+
+# AutoGen Studio 데이터베이스·작업 폴더
+*.db
+studio/
+
+# 파이썬 가상환경·캐시
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 백업
+backup/
+*.bak
+*.bak-*

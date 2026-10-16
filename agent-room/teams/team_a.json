@@ -1,0 +1,234 @@
+{
+  "provider": "autogen_agentchat.teams.RoundRobinGroupChat",
+  "component_type": "team",
+  "version": 1,
+  "component_version": 1,
+  "description": "RoundRobin: 클로드 → 제미나이 → 딥시크 → 사람",
+  "label": "팀 A 순서 고정",
+  "config": {
+    "participants": [
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "An agent that provides assistance with tool use.",
+        "label": "AssistantAgent",
+        "config": {
+          "name": "claude",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for OpenAI hosted models.",
+            "label": "OpenAIChatCompletionClient",
+            "config": {
+              "temperature": 0.7,
+              "model": "sonnet",
+              "api_key": "**********",
+              "model_info": {
+                "vision": false,
+                "function_calling": false,
+                "json_output": false,
+                "family": "unknown",
+                "structured_output": false
+              },
+              "base_url": "http://127.0.0.1:8090/v1"
+            }
+          },
+          "workbench": {
+            "provider": "autogen_core.tools.StaticWorkbench",
+            "component_type": "workbench",
+            "version": 1,
+            "component_version": 1,
+            "description": "A workbench that provides a static set of tools that do not change after\n    each tool execution.",
+            "label": "StaticWorkbench",
+            "config": {
+              "tools": []
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "클로드: 제안 담당. 질문이나 직전 의견을 보고 구체적인 안을 제안하고, 지적을 받으면 안을 고친다.",
+          "system_message": "너는 '클로드'(claude)이고 역할은 제안 담당이다. 질문이나 직전 의견을 보고 구체적인 안을 제안하고, 지적을 받으면 안을 고친다.\n\n[공통 발언 규칙]\n- 참여자: 클로드(claude, 제안 담당), 제미나이(gemini, 검토 담당), 딥시크(deepseek, 정리 담당), 사람(human, 사용자).\n  대화 기록에는 영문 이름이 보이지만, 발언에서는 한국어 이름으로 부른다.\n- 모든 발언의 첫 줄은 정확히 이 형식이다: [받는 사람: 이름 또는 전체] [동의/반대/보충]\n  예) [받는 사람: 제미나이] [반대]\n- 한국어로, 5문장 이내로 말한다.\n- 다른 참여자의 발언을 대신 쓰거나 이름표를 붙여 흉내 내지 않는다.\n- 합의가 되면 정리 담당(딥시크)이 최종안을 쓰고 마지막 줄에 '합의완료'라고만 쓴다. 정리 담당이 아니면 '합의완료'라는 말을 쓰지 않는다.",
+          "model_client_stream": false,
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "{result}",
+          "metadata": {}
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "An agent that provides assistance with tool use.",
+        "label": "AssistantAgent",
+        "config": {
+          "name": "gemini",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for OpenAI hosted models.",
+            "label": "OpenAIChatCompletionClient",
+            "config": {
+              "model": "gemini-3.8-flash",
+              "api_key": "**********",
+              "model_info": {
+                "vision": false,
+                "function_calling": false,
+                "json_output": false,
+                "family": "unknown",
+                "structured_output": false
+              },
+              "base_url": "http://127.0.0.1:8092/v1"
+            }
+          },
+          "workbench": {
+            "provider": "autogen_core.tools.StaticWorkbench",
+            "component_type": "workbench",
+            "version": 1,
+            "component_version": 1,
+            "description": "A workbench that provides a static set of tools that do not change after\n    each tool execution.",
+            "label": "StaticWorkbench",
+            "config": {
+              "tools": []
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "제미나이: 검토 담당. 직전 제안의 약점을 근거와 함께 최소 1개 지적한다. 약점이 해결됐으면 동의한다.",
+          "system_message": "너는 '제미나이'(gemini)이고 역할은 검토 담당이다. 직전 제안의 약점을 근거와 함께 최소 1개 지적한다. 약점이 해결됐으면 동의한다.\n\n[공통 발언 규칙]\n- 참여자: 클로드(claude, 제안 담당), 제미나이(gemini, 검토 담당), 딥시크(deepseek, 정리 담당), 사람(human, 사용자).\n  대화 기록에는 영문 이름이 보이지만, 발언에서는 한국어 이름으로 부른다.\n- 모든 발언의 첫 줄은 정확히 이 형식이다: [받는 사람: 이름 또는 전체] [동의/반대/보충]\n  예) [받는 사람: 제미나이] [반대]\n- 한국어로, 5문장 이내로 말한다.\n- 다른 참여자의 발언을 대신 쓰거나 이름표를 붙여 흉내 내지 않는다.\n- 합의가 되면 정리 담당(딥시크)이 최종안을 쓰고 마지막 줄에 '합의완료'라고만 쓴다. 정리 담당이 아니면 '합의완료'라는 말을 쓰지 않는다.",
+          "model_client_stream": false,
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "{result}",
+          "metadata": {}
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "An agent that provides assistance with tool use.",
+        "label": "AssistantAgent",
+        "config": {
+          "name": "deepseek",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for OpenAI hosted models.",
+            "label": "OpenAIChatCompletionClient",
+            "config": {
+              "max_tokens": 2000,
+              "temperature": 0.7,
+              "model": "deepseek-ai/deepseek-v4.1-flash",
+              "api_key": "**********",
+              "model_info": {
+                "vision": false,
+                "function_calling": false,
+                "json_output": false,
+                "family": "unknown",
+                "structured_output": false
+              },
+              "add_name_prefixes": true,
+              "base_url": "http://127.0.0.1:8093/v1"
+            }
+          },
+          "workbench": {
+            "provider": "autogen_core.tools.StaticWorkbench",
+            "component_type": "workbench",
+            "version": 1,
+            "component_version": 1,
+            "description": "A workbench that provides a static set of tools that do not change after\n    each tool execution.",
+            "label": "StaticWorkbench",
+            "config": {
+              "tools": []
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "딥시크: 정리 담당. 논의를 정리한다. 제안과 검토가 합의에 이르렀으면 최종안을 쓰고 마지막 줄에 '합의완료'를 쓴다. 아직 쟁점이 남았으면 무엇이 남았는지 정리한다.",
+          "system_message": "너는 '딥시크'(deepseek)이고 역할은 정리 담당이다. 논의를 정리한다. 제안과 검토가 합의에 이르렀으면 최종안을 쓰고 마지막 줄에 '합의완료'를 쓴다. 아직 쟁점이 남았으면 무엇이 남았는지 정리한다.\n\n[공통 발언 규칙]\n- 참여자: 클로드(claude, 제안 담당), 제미나이(gemini, 검토 담당), 딥시크(deepseek, 정리 담당), 사람(human, 사용자).\n  대화 기록에는 영문 이름이 보이지만, 발언에서는 한국어 이름으로 부른다.\n- 모든 발언의 첫 줄은 정확히 이 형식이다: [받는 사람: 이름 또는 전체] [동의/반대/보충]\n  예) [받는 사람: 제미나이] [반대]\n- 한국어로, 5문장 이내로 말한다.\n- 다른 참여자의 발언을 대신 쓰거나 이름표를 붙여 흉내 내지 않는다.\n- 합의가 되면 정리 담당(딥시크)이 최종안을 쓰고 마지막 줄에 '합의완료'라고만 쓴다. 정리 담당이 아니면 '합의완료'라는 말을 쓰지 않는다.",
+          "model_client_stream": false,
+          "reflect_on_tool_use": false,
+          "tool_call_summary_format": "{result}",
+          "metadata": {}
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.UserProxyAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "An agent that can represent a human user through an input function.",
+        "label": "UserProxyAgent",
+        "config": {
+          "name": "human",
+          "description": "사람: 사용자. 의견을 내거나 방향을 정해 준다."
+        }
+      }
+    ],
+    "termination_condition": {
+      "provider": "autogen_agentchat.base.OrTerminationCondition",
+      "component_type": "termination",
+      "version": 1,
+      "component_version": 1,
+      "label": "OrTerminationCondition",
+      "config": {
+        "conditions": [
+          {
+            "provider": "autogen_agentchat.conditions.TextMentionTermination",
+            "component_type": "termination",
+            "version": 1,
+            "component_version": 1,
+            "description": "Terminate the conversation if a specific text is mentioned.",
+            "label": "TextMentionTermination",
+            "config": {
+              "text": "합의완료"
+            }
+          },
+          {
+            "provider": "autogen_agentchat.conditions.MaxMessageTermination",
+            "component_type": "termination",
+            "version": 1,
+            "component_version": 1,
+            "description": "Terminate the conversation after a maximum number of messages have been exchanged.",
+            "label": "MaxMessageTermination",
+            "config": {
+              "max_messages": 16,
+              "include_agent_event": false
+            }
+          }
+        ]
+      }
+    },
+    "emit_team_events": false
+  }
+}

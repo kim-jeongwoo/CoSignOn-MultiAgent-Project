@@ -1,0 +1,15 @@
+[Unit]
+Description=agent-room Claude 중계 (OpenAI 형식 → claude-agent-sdk, 구독 크레딧) 127.0.0.1:8090
+After=network-online.target
+
+[Service]
+WorkingDirectory=/home/dmlserver/agent-room
+UnsetEnvironment=ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL CLAUDE_CODE_OAUTH_TOKEN
+Environment=ENABLE_CLAUDEAI_MCP_SERVERS=false
+Environment=PATH=/home/dmlserver/agent-room/.venv/bin:/home/dmlserver/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/dmlserver/agent-room/.venv/bin/uvicorn claude_proxy:app --host 127.0.0.1 --port 8090
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

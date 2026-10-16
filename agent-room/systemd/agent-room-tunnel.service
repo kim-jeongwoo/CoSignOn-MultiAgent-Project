@@ -1,0 +1,11 @@
+[Unit]
+Description=Cloudflare Tunnel agent-room.vocal-fit.com -> 127.0.0.1:8082 (nginx basic auth -> AutoGen Studio)
+After=network-online.target agent-room-nginx.service
+
+[Service]
+ExecStart=/home/dmlserver/.local/bin/cloudflared --no-autoupdate --config /home/dmlserver/.cloudflared/config-agent-room.yml tunnel run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
