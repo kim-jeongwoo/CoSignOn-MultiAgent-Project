@@ -1,9 +1,8 @@
 [Unit]
-Description=agent-room 입구 127.0.0.1:8095 (아무 이름 + 비밀번호 ROOM_PASSWORD, 접속자 표시)
+Description=agent-room 입구 127.0.0.1:8095 (관리자 승인 방식 로그인, 관리자 화면, 접속자·접속 기록)
 
 [Service]
 WorkingDirectory=/home/dmlserver/agent-room
-Environment=ROOM_PASSWORD=<여기에 비밀번호>
 ExecStart=/home/dmlserver/agent-room/.venv/bin/uvicorn room_gate:app --host 127.0.0.1 --port 8095
 Restart=always
 RestartSec=5

@@ -1,5 +1,5 @@
 [Unit]
-Description=agent-room 비밀번호 관문 nginx 127.0.0.1:8082 → Studio 8081 (basic auth)
+Description=agent-room 입구 nginx 127.0.0.1:8082 → Studio 8081 (관리자 승인 방식, 권한은 room_gate /auth)
 After=agent-room-studio.service
 
 [Service]

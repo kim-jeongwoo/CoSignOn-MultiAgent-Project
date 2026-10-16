@@ -71,7 +71,8 @@ aside section + section { margin-top: 18px; }
       <select id="team" aria-label="팀 선택"></select>
       <button type="button" class="stop" id="newchat" title="이전 대화를 비우고 새로 시작">새 대화</button>
       <span class="grow"></span>
-      <a href="/" title="AutoGen Studio 원래 화면(팀 편집)">Studio 화면</a>
+      <a href="/admin" id="adminLink" hidden>관리자 화면</a>
+      <a href="/" id="studioLink" title="AutoGen Studio 원래 화면(팀 편집) — 관리자만" hidden>Studio 화면</a>
       <a href="/__room/logout">나가기</a>
     </header>
     <div id="log" aria-live="polite"></div>
@@ -165,7 +166,8 @@ aside section + section { margin-top: 18px; }
   function api(path, opts) {
     return fetch(path, Object.assign({credentials: 'same-origin', headers: {'Content-Type': 'application/json'}}, opts || {}))
       .then(function (r) {
-        if (r.redirected && r.url.indexOf('/__room/login') >= 0) { location.href = '/__room/login?next=/room'; throw new Error('로그인 필요'); }
+        if ((r.redirected && r.url.indexOf('/__room/request') >= 0) || r.status === 401) { location.href = '/__room/request?next=/room'; throw new Error('승인 필요'); }
+        if (r.status === 403) throw new Error('권한 없음');
         return r.json();
       });
   }
@@ -262,6 +264,7 @@ aside section + section { margin-top: 18px; }
   function presence() {
     api('/__room/presence').then(function (d) {
       me = d.me || me;
+      $('adminLink').hidden = $('studioLink').hidden = d.role !== 'admin';
       $('ucount').textContent = d.users.length;
       $('users').innerHTML = d.users.map(function (u) { return '<div class="u">' + esc(u) + (u === d.me ? ' (나)' : '') + '</div>'; }).join('') || '-';
       $('access').innerHTML = (d.log || []).map(function (e) { return '<div class="l">' + hm(e.t) + ' <b>' + esc(e.name) + '</b> ' + esc(e.event) + '</div>'; }).join('') || '-';

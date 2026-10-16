@@ -12,6 +12,7 @@
 - uvicorn 0.54.0
 - httpx 0.28.1
 - websockets 17.2
+- bcrypt 5.0.0 (관리자 비밀번호 해시, room_gate.py — 2026-10-16 추가)
 
 ## 모델
 
